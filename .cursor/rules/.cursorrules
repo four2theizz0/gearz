@@ -1,0 +1,317 @@
+# MMA Gear E-commerce Site - Cursor Rules
+
+## Project Overview
+This is a local pickup e-commerce site for used MMA gear. The site showcases inventory with quality ratings, handles 48-hour holds, and provides admin management capabilities.
+
+## Tech Stack Requirements
+- Frontend: React with Next.js 14+ (App Router)
+- Backend: Node.js with Express
+- Database: Airtable (existing base)
+- Image Storage: ImageKit (ik.imagekit.io)
+- Authentication: JWT-based admin auth
+- Email: EmailJS or Resend
+- Styling: Tailwind CSS
+- Deployment: Vercel (recommended)
+
+## Key Business Rules
+1. **Hold System Logic**:
+   - Single item (inventory = 1): Creates hold, shows "On Hold" with countdown
+   - Multiple items (inventory > 1): Reduces inventory by 1, no hold display
+   - All holds expire after 48 hours
+   - Auto-restore inventory if hold expires without completion
+
+2. **Quality Scale**: Like New > Very Good > Good > Fair > Poor
+
+3. **Categories**: Gloves, Headgear, Shin Guards, Training Equipment, Protective Gear, Fight Shorts, Rash Guards
+
+4. **Local Pickup Only**: No shipping functionality needed
+
+## Code Standards & Best Practices
+
+### General Guidelines
+- Use TypeScript for all new files
+- Implement proper error handling with try-catch blocks
+- Use async/await over promises
+- Follow Next.js App Router patterns
+- Implement proper loading states and error boundaries
+- Use React Query/TanStack Query for data fetching
+- Implement proper SEO meta tags
+
+### Component Structure
+- Use functional components with hooks
+- Implement proper prop types with TypeScript interfaces
+- Use compound components for complex UI elements
+- Follow atomic design principles (atoms, molecules, organisms)
+- Keep components focused and single-responsibility
+
+### File Organization
+```
+src/
+├── app/                   # Next.js App Router
+├── components/           # Reusable UI components
+│   ├── ui/               # Basic UI components
+│   ├── forms/            # Form components
+│   └── layout/           # Layout components
+├── lib/                  # Utility functions
+├── hooks/                # Custom React hooks
+├── types/                # TypeScript type definitions
+├── services/             # API calls and external integrations
+└── constants/            # Application constants
+```
+
+### Naming Conventions
+- Components: PascalCase (ProductCard.tsx)
+- Files/Folders: kebab-case (product-card.tsx)
+- Variables/Functions: camelCase (productData)
+- Constants: UPPER_SNAKE_CASE (QUALITY_LEVELS)
+- API routes: kebab-case (/api/products)
+
+## Airtable Integration Requirements
+
+### Schema Fields (use exactly these names)
+```typescript
+interface Product {
+  name: string;
+  description: string;
+  price: number;
+  inventory: number;
+  imageurl: string;
+  image_urls: string; // JSON array as string
+  category: string;
+  quality: string;
+  createdAt: string;
+  updatedAt: string;
+  hold_status: boolean;
+  hold_expires_at: string;
+  hold_customer_email: string;
+  category_icon: string;
+  sku: string;
+  sold_date: string;
+}
+```
+
+### API Integration
+- Use Airtable REST API
+- Implement proper error handling for API limits
+- Use environment variables for API keys
+- Implement caching where appropriate
+- Handle rate limiting gracefully
+
+## ImageKit Integration
+
+### Image Handling
+- Upload images through admin panel only
+- Store returned URLs in Airtable
+- Use ImageKit transformations for optimization
+- Implement proper error handling for uploads
+- Support multiple images per product
+
+### Image Optimization
+- Use WebP format when supported
+- Implement responsive images
+- Use lazy loading for performance
+- Add proper alt tags for accessibility
+
+## UI/UX Guidelines
+
+### Design System
+- Mobile-first responsive design
+- Use Tailwind CSS utility classes
+- Implement consistent spacing (4px base unit)
+- Use consistent color scheme
+- Follow accessibility guidelines (WCAG 2.1 AA)
+
+### Components to Build
+1. **ProductCard** - Grid item showing product summary
+2. **ProductModal** - Detailed view with image gallery
+3. **ContactForm** - Customer inquiry form
+4. **AdminDashboard** - Product management interface
+5. **CategoryFilter** - Category selection component
+6. **HoldTimer** - Countdown display for held items
+7. **InventoryBadge** - Stock level indicator
+
+### Key Features Implementation
+- Search and filter functionality
+- Image gallery with zoom
+- Form validation and submission
+- Real-time inventory updates
+- Hold system with timers
+- Admin authentication
+
+## Security Requirements
+
+### Authentication
+- Implement JWT tokens for admin access
+- Use httpOnly cookies for token storage
+- Implement proper session management
+- Add rate limiting for auth endpoints
+
+### Data Protection
+- Validate all inputs on both client and server
+- Sanitize user inputs
+- Use HTTPS in production
+- Implement CSRF protection
+- Store sensitive data in environment variables
+
+## Performance Optimization
+
+### Loading & Caching
+- Implement React Query for data caching
+- Use Next.js Image component for optimized images
+- Implement proper loading states
+- Use skeleton screens for better UX
+- Implement error boundaries
+
+### SEO Requirements
+- Generate proper meta tags for each page
+- Implement structured data for products
+- Use semantic HTML
+- Implement proper heading hierarchy
+- Add sitemap generation
+
+## Testing Guidelines
+
+### Testing Requirements
+- Write unit tests for utility functions
+- Test component rendering and interactions
+- Test API integration functions
+- Implement E2E tests for critical user flows
+- Test mobile responsiveness
+
+### Key Flows to Test
+1. Product browsing and filtering
+2. Contact form submission
+3. Hold system functionality
+4. Admin product management
+5. Image upload process
+
+## Environment Variables Required
+```bash
+# Airtable
+AIRTABLE_API_KEY=
+AIRTABLE_BASE_ID=
+
+# ImageKit
+# Server-side (API routes) - keep private
+IMAGEKIT_PRIVATE_KEY=
+
+# Client-side (components) - can be public
+NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=
+NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT=
+
+# Email Service
+EMAIL_SERVICE_API_KEY=
+
+# JWT
+JWT_SECRET=
+
+# Next.js
+NEXT_PUBLIC_SITE_URL=https://gear.maineventlive.ca
+```
+
+## Development Workflow
+
+### Git Workflow
+- Use conventional commits
+- Create feature branches for new functionality
+- Write descriptive commit messages
+- Use PR reviews for code quality
+
+### Development Commands
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run test         # Run tests
+npm run lint         # Run linting
+npm run type-check   # TypeScript checking
+```
+
+## Common Patterns to Follow
+
+### Data Fetching
+```typescript
+// Use React Query for API calls
+const { data: products, isLoading, error } = useQuery({
+  queryKey: ['products'],
+  queryFn: fetchProducts,
+});
+```
+
+### Error Handling
+```typescript
+// Consistent error handling
+try {
+  const result = await apiCall();
+  return result;
+} catch (error) {
+  console.error('API Error:', error);
+  throw new Error('User-friendly error message');
+}
+```
+
+### Form Handling
+```typescript
+// Use React Hook Form for forms
+const { register, handleSubmit, formState: { errors } } = useForm();
+```
+
+## Deployment Considerations
+
+### Production Checklist
+- [ ] Environment variables configured
+- [ ] SSL certificate active
+- [ ] Error tracking setup (Sentry recommended)
+- [ ] Performance monitoring
+- [ ] SEO meta tags implemented
+- [ ] Google Analytics configured
+- [ ] Mobile responsiveness tested
+
+### Performance Targets
+- First Contentful Paint: < 1.5s
+- Largest Contentful Paint: < 2.5s
+- Time to Interactive: < 3.5s
+- Mobile PageSpeed Score: > 90
+
+## Debugging Guidelines
+
+### Common Issues to Watch For
+- Airtable API rate limits
+- Image upload failures
+- Hold system race conditions
+- Mobile responsiveness issues
+- Form validation edge cases
+
+### Logging Strategy
+- Use structured logging
+- Log API responses for debugging
+- Implement client-side error tracking
+- Monitor performance metrics
+
+## Code Quality Rules
+
+### ESLint/Prettier Configuration
+- Use strict TypeScript rules
+- Enforce consistent code formatting
+- Use import sorting
+- Enforce component prop validation
+
+### Code Review Guidelines
+- Check for proper error handling
+- Verify mobile responsiveness
+- Ensure accessibility compliance
+- Validate API integration patterns
+- Check for security vulnerabilities
+
+## Priority Development Order
+1. Basic product catalog display
+2. Category filtering
+3. Contact form functionality
+4. Hold system implementation
+5. Admin authentication
+6. Admin product management
+7. Image upload integration
+8. Performance optimization
+9. SEO implementation
+10. Testing and deployment
+
+Remember: This is a local pickup only site - no shipping, no online payments, no user accounts needed. Focus on simplicity and reliability over complex features.

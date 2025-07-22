@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/jpg.st/gearz/logs/.4285b31a9a66a922ee524748ad69f66d9409bad2-audit.json",
+    "files": [
+        {
+            "date": 1753137289661,
+            "name": "/Users/jpg.st/gearz/logs/mcp-puppeteer-2025-07-21.log",
+            "hash": "a75462acd95bacdc7c67babe09b207aa7e90ada0c876ae7f94f1a1558189d548"
+        }
+    ],
+    "hashType": "sha256"
+}
