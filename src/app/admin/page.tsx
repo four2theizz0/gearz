@@ -32,12 +32,7 @@ export default async function AdminPage() {
   const productMap = Object.fromEntries(products.map(p => [p.id, p.fields]));
   const activeHolds = holds.filter(h => h.fields.hold_status === 'Active');
 
-  // Filter state (default: Active)
-  const filter = 'Active' as const; // For now, static. Can be made dynamic with client component.
-  const filteredProducts = products.filter(p => {
-    const status = getProductStatus({ ...p.fields, id: p.id }, holds);
-    return status === filter; // Only show Active products for now
-  });
+  // Pass all products to ProductTable for client-side filtering
 
   return (
     <div>
@@ -132,14 +127,7 @@ export default async function AdminPage() {
       {/* Product Inventory Table */}
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Product Inventory</h2>
-        {/* Filter Buttons */}
-        <div className="mb-4 flex gap-2">
-          <button className={`btn-secondary ${filter === 'Active' ? 'bg-red-600 text-white' : ''}`}>Active</button>
-          <button className={`btn-secondary ${false ? 'bg-yellow-600 text-white' : ''}`}>On Hold</button>
-          <button className={`btn-secondary ${false ? 'bg-green-600 text-white' : ''}`}>Sold</button>
-          <button className={`btn-secondary ${false ? 'bg-gray-700 text-white' : ''}`}>All</button>
-        </div>
-        <ProductTable products={filteredProducts} holds={holds} />
+        <ProductTable products={products} holds={holds} />
       </div>
 
       <div className="mt-12">

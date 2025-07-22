@@ -113,3 +113,72 @@ export async function createProductRecord(productData: ProductRecord): Promise<A
   const data = await res.json();
   return data;
 }
+
+export async function updateProductRecord(recordId: string, productData: Partial<ProductRecord>): Promise<AirtableRecord> {
+  if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
+    throw new Error('Missing Airtable API configuration');
+  }
+
+  // Clean up the data - remove undefined values and ensure proper types
+  const cleanFields: Record<string, any> = {};
+  
+  // Handle all possible fields
+  const allFields = ['name', 'description', 'price', 'inventory', 'category', 'quality', 'brand', 'size', 'weight', 'color', 'image_url', 'image_url_2', 'image_url_3', 'image_url_4'] as const;
+  
+  for (const field of allFields) {
+    const value = productData[field];
+    if (value !== undefined) {
+      if (typeof value === 'string') {
+        cleanFields[field] = value.trim() || null; // Use null to clear empty strings
+      } else {
+        cleanFields[field] = value;
+      }
+    }
+  }
+
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_PRODUCTS_TABLE}/${recordId}`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${AIRTABLE_PAT}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      fields: cleanFields,
+      typecast: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('[Airtable Update] Error response:', errorText);
+    throw new Error(`Airtable update failed: ${res.status} - ${errorText}`);
+  }
+
+  const data = await res.json();
+  return data;
+}
+
+export async function deleteProductRecord(recordId: string): Promise<void> {
+  if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
+    throw new Error('Missing Airtable API configuration');
+  }
+
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_PRODUCTS_TABLE}/${recordId}`;
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${AIRTABLE_PAT}`,
+    },
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('[Airtable Delete] Error response:', errorText);
+    throw new Error(`Airtable delete failed: ${res.status} - ${errorText}`);
+  }
+}
+
+export async function markProductAsSold(recordId: string): Promise<AirtableRecord> {
+  return updateProductRecord(recordId, { inventory: 0 });
+}
