@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="bg-gray-800 border-t border-gray-700 mt-auto">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="text-center text-gray-400">
-              <small>&copy; {new Date().getFullYear()} MMA Gear E-commerce Site</small>
+              <small>&copy; 2024 MMA Gear E-commerce Site</small>
             </div>
           </div>
         </footer>

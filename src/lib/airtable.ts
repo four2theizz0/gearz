@@ -182,3 +182,156 @@ export async function deleteProductRecord(recordId: string): Promise<void> {
 export async function markProductAsSold(recordId: string): Promise<AirtableRecord> {
   return updateProductRecord(recordId, { inventory: 0 });
 }
+
+// Hold Management Functions
+export async function updateHoldRecord(holdId: string, updates: {
+  hold_status?: string;
+  hold_expires_at?: string;
+  pickup_day?: string;
+  pickup_custom?: string;
+  notes?: string;
+}): Promise<AirtableRecord> {
+  if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
+    throw new Error('Missing Airtable API configuration');
+  }
+
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HOLDS_TABLE}/${holdId}`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${AIRTABLE_PAT}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      fields: updates,
+      typecast: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('[Airtable Update Hold] Error response:', errorText);
+    throw new Error(`Airtable hold update failed: ${res.status} - ${errorText}`);
+  }
+
+  return await res.json();
+}
+
+// Sales Record Management
+export async function createSaleRecord(saleData: {
+  product_ids: string[];
+  customer_name: string;
+  customer_email: string;
+  customer_phone?: string;
+  sale_date: string;
+  payment_method?: string;
+  transaction_id?: string;
+  final_price: number;
+  admin_notes?: string;
+}): Promise<AirtableRecord> {
+  if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
+    throw new Error('Missing Airtable API configuration');
+  }
+
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_SALES_TABLE}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${AIRTABLE_PAT}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      fields: {
+        Products: saleData.product_ids, // Link to products
+        customer_name: saleData.customer_name,
+        customer_email: saleData.customer_email,
+        customer_phone: saleData.customer_phone || '',
+        sale_date: saleData.sale_date,
+        payment_method: saleData.payment_method || '',
+        transaction_id: saleData.transaction_id || '',
+        final_price: saleData.final_price,
+        admin_notes: saleData.admin_notes || '',
+      },
+      typecast: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('[Airtable Create Sale] Error response:', errorText);
+    throw new Error(`Airtable sale creation failed: ${res.status} - ${errorText}`);
+  }
+
+  return await res.json();
+}
+
+// Complete Hold → Sale Conversion
+export async function convertHoldToSale(holdId: string, saleDetails: {
+  payment_method?: string;
+  transaction_id?: string;
+  final_price?: number;
+  admin_notes?: string;
+}): Promise<{ sale: AirtableRecord; updatedProducts: AirtableRecord[] }> {
+  // First, get the hold details
+  const holdUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HOLDS_TABLE}/${holdId}`;
+  const holdRes = await fetch(holdUrl, {
+    headers: {
+      Authorization: `Bearer ${AIRTABLE_PAT}`,
+    },
+  });
+
+  if (!holdRes.ok) {
+    throw new Error('Hold not found');
+  }
+
+  const hold = await holdRes.json();
+  const holdFields = hold.fields;
+
+  if (!holdFields.Products || holdFields.Products.length === 0) {
+    throw new Error('No products associated with this hold');
+  }
+
+  // Calculate final price if not provided
+  let finalPrice = saleDetails.final_price;
+  if (!finalPrice) {
+    // Get product prices to calculate total
+    const productPrices = await Promise.all(
+      holdFields.Products.map(async (productId: string) => {
+        const productUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_PRODUCTS_TABLE}/${productId}`;
+        const productRes = await fetch(productUrl, {
+          headers: { Authorization: `Bearer ${AIRTABLE_PAT}` },
+        });
+        const product = await productRes.json();
+        return parseFloat(product.fields.price) || 0;
+      })
+    );
+    finalPrice = productPrices.reduce((sum, price) => sum + price, 0);
+  }
+
+  // Create sale record
+  const sale = await createSaleRecord({
+    product_ids: holdFields.Products,
+    customer_name: holdFields.customer_name,
+    customer_email: holdFields.customer_email,
+    customer_phone: holdFields.customer_phone,
+    sale_date: new Date().toISOString(),
+    payment_method: saleDetails.payment_method,
+    transaction_id: saleDetails.transaction_id,
+    final_price: finalPrice!,
+    admin_notes: saleDetails.admin_notes,
+  });
+
+  // Update products inventory to 0 (sold)
+  const updatedProducts = await Promise.all(
+    holdFields.Products.map((productId: string) =>
+      updateProductRecord(productId, { inventory: 0 })
+    )
+  );
+
+  // Update hold status to completed
+  await updateHoldRecord(holdId, {
+    hold_status: 'Completed',
+  });
+
+  return { sale, updatedProducts };
+}

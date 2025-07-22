@@ -6,7 +6,9 @@
       "Bash(claude mcp add:*)",
       "Bash(claude mcp:*)",
       "Bash(npm search:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(git push:*)",
+      "mcp__sequential-thinking__sequentialthinking"
     ],
     "deny": []
   }
