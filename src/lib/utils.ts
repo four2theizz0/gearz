@@ -18,5 +18,5 @@ export function getProductImages(product: Record<string, any>): string[] {
     product.image_url_2,
     product.image_url_3,
     product.image_url_4,
-  ].filter(Boolean);
+  ].filter(url => url && typeof url === 'string' && url.trim() !== '');
 }

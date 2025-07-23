@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { HoldRecord } from '@/lib/airtable';
 import { formatPickupDay, formatDate } from '@/lib/dateUtils';
 import ClientOnly from '@/components/ClientOnly';
+import { useToast } from '@/components/ui/ToastContainer';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface HoldManagementProps {
   holds: any[];
@@ -19,6 +21,8 @@ export default function HoldManagement({ holds, productMap, onHoldUpdate }: Hold
     final_price: '',
     admin_notes: ''
   });
+  
+  const { showSuccess, showError } = useToast();
 
 
   const isExpired = (holdExpiresAt: string) => {
@@ -53,16 +57,16 @@ export default function HoldManagement({ holds, productMap, onHoldUpdate }: Hold
       });
 
       if (response.ok) {
-        alert('Sale completed successfully!');
+        showSuccess('Sale Completed!', 'Hold successfully converted to sale and products marked as sold.');
         setShowCompleteForm(null);
         setSaleDetails({ payment_method: '', transaction_id: '', final_price: '', admin_notes: '' });
         onHoldUpdate();
       } else {
         const error = await response.json();
-        alert(`Failed to complete sale: ${error.error}`);
+        showError('Sale Failed', error.error || 'Failed to complete sale');
       }
     } catch (error) {
-      alert('Error completing sale');
+      showError('Error', 'An unexpected error occurred while completing the sale');
     }
     setProcessing(null);
   };
@@ -82,13 +86,13 @@ export default function HoldManagement({ holds, productMap, onHoldUpdate }: Hold
       });
 
       if (response.ok) {
-        alert('Hold cancelled successfully!');
+        showSuccess('Hold Cancelled', 'Hold cancelled successfully. Product is now available again.');
         onHoldUpdate();
       } else {
-        alert('Failed to cancel hold');
+        showError('Cancel Failed', 'Failed to cancel hold. Please try again.');
       }
     } catch (error) {
-      alert('Error cancelling hold');
+      showError('Error', 'An unexpected error occurred while cancelling the hold');
     }
     setProcessing(null);
   };
@@ -118,13 +122,13 @@ export default function HoldManagement({ holds, productMap, onHoldUpdate }: Hold
       });
 
       if (response.ok) {
-        alert('Hold extended by 24 hours!');
+        showSuccess('Hold Extended', 'Hold extended by 24 hours successfully.');
         onHoldUpdate();
       } else {
-        alert('Failed to extend hold');
+        showError('Extend Failed', 'Failed to extend hold. Please try again.');
       }
     } catch (error) {
-      alert('Error extending hold');
+      showError('Error', 'An unexpected error occurred while extending the hold');
     }
     setProcessing(null);
   };
@@ -255,23 +259,44 @@ export default function HoldManagement({ holds, productMap, onHoldUpdate }: Hold
                       <button
                         onClick={() => setShowCompleteForm(hold.id)}
                         disabled={processing === hold.id}
-                        className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50"
+                        className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 flex items-center gap-1"
                       >
-                        Complete Sale
+                        {processing === hold.id && processing !== null ? (
+                          <>
+                            <LoadingSpinner size="small" />
+                            Processing...
+                          </>
+                        ) : (
+                          'Complete Sale'
+                        )}
                       </button>
                       <button
                         onClick={() => handleExtendHold(hold.id)}
                         disabled={processing === hold.id}
-                        className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50"
+                        className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50 flex items-center gap-1"
                       >
-                        Extend
+                        {processing === hold.id ? (
+                          <>
+                            <LoadingSpinner size="small" />
+                            Extending...
+                          </>
+                        ) : (
+                          'Extend'
+                        )}
                       </button>
                       <button
                         onClick={() => handleCancelHold(hold.id)}
                         disabled={processing === hold.id}
-                        className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50"
+                        className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50 flex items-center gap-1"
                       >
-                        Cancel
+                        {processing === hold.id ? (
+                          <>
+                            <LoadingSpinner size="small" />
+                            Cancelling...
+                          </>
+                        ) : (
+                          'Cancel'
+                        )}
                       </button>
                     </div>
                   </td>
@@ -345,9 +370,16 @@ export default function HoldManagement({ holds, productMap, onHoldUpdate }: Hold
               <button
                 onClick={() => handleCompleteSale(showCompleteForm)}
                 disabled={processing === showCompleteForm}
-                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {processing === showCompleteForm ? 'Processing...' : 'Complete Sale'}
+                {processing === showCompleteForm ? (
+                  <>
+                    <LoadingSpinner size="small" />
+                    Processing Sale...
+                  </>
+                ) : (
+                  'Complete Sale'
+                )}
               </button>
               <button
                 onClick={() => {

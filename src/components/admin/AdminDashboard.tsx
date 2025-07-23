@@ -5,6 +5,8 @@ import HoldManagement from '@/components/admin/HoldManagement';
 import HoldNotifications from '@/components/admin/HoldNotifications';
 import { formatPickupDay } from '@/lib/dateUtils';
 import ClientOnly from '@/components/ClientOnly';
+import { useToast } from '@/components/ui/ToastContainer';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface AdminDashboardProps {
   initialProducts: any[];
@@ -21,6 +23,8 @@ export default function AdminDashboard({
   const [holds, setHolds] = useState(initialHolds);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const { showSuccess, showError } = useToast();
 
   const activeHolds = holds.filter(h => {
     const fields = h.fields;
@@ -60,17 +64,20 @@ export default function AdminDashboard({
         const freshHolds = await response.json();
         setHolds(freshHolds.holds);
         setRefreshKey(prev => prev + 1);
+        showSuccess('Data Refreshed', 'Hold information updated successfully');
       } else {
+        showError('Refresh Failed', 'Failed to refresh data. Please try again.');
         // Fallback to page reload if API call fails
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 2000);
       }
     } catch (error) {
+      showError('Connection Error', 'Unable to connect to server. Refreshing page...');
       // Fallback to page reload if there's an error
-      window.location.reload();
+      setTimeout(() => window.location.reload(), 2000);
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [showSuccess, showError]);
 
   // Auto-refresh holds data every 2 minutes to catch expiration changes
   useEffect(() => {

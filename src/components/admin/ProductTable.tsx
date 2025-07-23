@@ -2,6 +2,8 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/ToastContainer';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 function getProductStatus(product: any, holds: any[]): 'Active' | 'On Hold' | 'Sold' {
   if (product.status && product.status === 'Sold') return 'Sold';
@@ -30,6 +32,9 @@ export default function ProductTable({ products, holds }: { products: any[]; hol
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [processing, setProcessing] = useState<string | null>(null);
+  
+  const { showSuccess, showError } = useToast();
 
   // Get unique categories for filter dropdown
   const categories = useMemo(() => {
@@ -106,20 +111,42 @@ export default function ProductTable({ products, holds }: { products: any[]; hol
 
   async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to delete this product?')) return;
-    const res = await fetch(`/api/admin/delete-product?id=${id}`, { method: 'DELETE' });
-    if (res.ok) setDeletedIds(ids => [...ids, id]);
-    else alert('Failed to delete product.');
+    setProcessing(id);
+    try {
+      const res = await fetch(`/api/admin/delete-product?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setDeletedIds(ids => [...ids, id]);
+        showSuccess('Product Deleted', 'Product has been successfully removed from inventory.');
+      } else {
+        showError('Delete Failed', 'Failed to delete product. Please try again.');
+      }
+    } catch (error) {
+      showError('Error', 'An unexpected error occurred while deleting the product.');
+    } finally {
+      setProcessing(null);
+    }
   }
 
   async function handleMarkAsSold(id: string) {
     if (!confirm('Mark this product as sold (set inventory to 0)?')) return;
-    const res = await fetch('/api/admin/mark-sold', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    });
-    if (res.ok) setSoldIds(ids => [...ids, id]);
-    else alert('Failed to mark product as sold.');
+    setProcessing(id);
+    try {
+      const res = await fetch('/api/admin/mark-sold', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      if (res.ok) {
+        setSoldIds(ids => [...ids, id]);
+        showSuccess('Product Marked as Sold', 'Product inventory has been set to 0 and marked as sold.');
+      } else {
+        showError('Update Failed', 'Failed to mark product as sold. Please try again.');
+      }
+    } catch (error) {
+      showError('Error', 'An unexpected error occurred while updating the product.');
+    } finally {
+      setProcessing(null);
+    }
   }
 
   return (
@@ -298,17 +325,33 @@ export default function ProductTable({ products, holds }: { products: any[]; hol
                   <Link href={`/admin/edit/${product.id}`} className="btn-secondary px-2 py-1 text-xs">Edit</Link>
                   {!isSold && (
                     <button 
-                      className="btn-secondary px-2 py-1 text-xs bg-blue-700 hover:bg-blue-800 text-white" 
+                      className="btn-secondary px-2 py-1 text-xs bg-blue-700 hover:bg-blue-800 text-white disabled:opacity-50 flex items-center gap-1" 
                       onClick={() => handleMarkAsSold(product.id)}
+                      disabled={processing === product.id}
                     >
-                      Mark Sold
+                      {processing === product.id ? (
+                        <>
+                          <LoadingSpinner size="small" />
+                          Marking...
+                        </>
+                      ) : (
+                        'Mark Sold'
+                      )}
                     </button>
                   )}
                   <button 
-                    className="btn-secondary px-2 py-1 text-xs bg-red-700 hover:bg-red-800 text-white" 
+                    className="btn-secondary px-2 py-1 text-xs bg-red-700 hover:bg-red-800 text-white disabled:opacity-50 flex items-center gap-1" 
                     onClick={() => handleDelete(product.id)}
+                    disabled={processing === product.id}
                   >
-                    Delete
+                    {processing === product.id ? (
+                      <>
+                        <LoadingSpinner size="small" />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete'
+                    )}
                   </button>
                 </td>
               </tr>

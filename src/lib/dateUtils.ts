@@ -31,9 +31,9 @@ export const formatDate = (dateString: string | null | undefined): string => {
 };
 
 export const formatPickupDay = (pickupDay: string, pickupCustom: string): string => {
+  if (pickupCustom) return pickupCustom;
   if (pickupDay && !isNaN(Date.parse(pickupDay))) {
     return formatDate(pickupDay);
   }
-  if (pickupCustom) return pickupCustom;
   return pickupDay || '-';
 };

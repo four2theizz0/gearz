@@ -1,13 +1,16 @@
 # MMA Gear E-commerce Site - Development Guide
 
+> **Updated with Phase 2 Quality & Reliability improvements including comprehensive testing, accessibility enhancements, and mobile-first responsive design.**
+
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+ and npm/yarn
 - Git
-- Airtable account with API access
+- Airtable account with Personal Access Token (PAT)
 - ImageKit account with API keys
-- Email service account (EmailJS or Resend)
+- Resend account for email notifications
+- Modern browser with developer tools
 
 ### Initial Setup
 
@@ -33,6 +36,27 @@ npm run dev
 ```
 
 Visit `http://localhost:3000` to see your site.
+Admin dashboard: `http://localhost:3000/admin`
+
+## 🎯 Current Features & Status
+
+### ✅ Completed Features (Phase 1 & 2)
+- **E-commerce Core**: Product browsing, purchase requests, hold management
+- **Admin Dashboard**: Authentication, hold management, sales completion
+- **Accessibility**: WCAG 2.1 AA compliance, keyboard navigation, screen reader support
+- **Mobile Responsive**: Touch-friendly, responsive design across all devices
+- **Testing Suite**: Unit tests, integration tests, end-to-end tests
+- **Error Handling**: Comprehensive error states and user feedback
+- **Loading States**: Loading indicators for all async operations
+- **Toast Notifications**: Success/error feedback system
+- **Image Management**: Multi-image support with ImageKit optimization
+
+### 🧪 Testing Infrastructure
+- **Unit Tests**: Jest + React Testing Library
+- **Integration Tests**: API route testing with mocking
+- **E2E Tests**: Playwright cross-browser testing
+- **Accessibility Tests**: Automated WCAG compliance checking
+- **Mobile Tests**: Responsive design validation
 
 ## 📋 Environment Variables Setup
 
@@ -211,20 +235,269 @@ mma-gear-site/
 
 ```bash
 # Development
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript checking
+npm run dev              # Start development server (localhost:3000)
+npm run build            # Build for production
+npm run start            # Start production server
 
-# Testing
-npm run test         # Run tests
-npm run test:watch   # Run tests in watch mode
-npm run test:e2e     # Run end-to-end tests
+# Code Quality & Validation
+npm run lint             # Run ESLint
+npm run format           # Format code with Prettier
+npm run type-check       # TypeScript type checking (run before commits!)
 
-# Code Quality
-npm run format       # Format code with Prettier
-npm run lint:fix     # Fix linting issues
+# Testing - Full Suite
+npm run test             # Run Jest unit tests
+npm run test:watch       # Run Jest tests in watch mode
+npm run test:e2e         # Run Playwright end-to-end tests
+
+# Specific Test Categories
+npm test -- --coverage                    # Run unit tests with coverage
+npx playwright test --headed              # Run e2e tests with browser GUI
+npx playwright test --project=chromium    # Run e2e tests on specific browser
+npx playwright test tests/e2e/accessibility.spec.ts  # Run accessibility tests only
+
+# Development Workflow Commands
+npm run type-check && npm run test && npm run build  # Pre-commit validation
+```
+
+## 🧪 Testing Strategy & Implementation
+
+### Test Categories
+
+#### 1. Unit Tests (`src/**/__tests__/`)
+- **Location**: Co-located with source files
+- **Framework**: Jest + React Testing Library
+- **Coverage**: Utility functions, components, date handling
+- **Run**: `npm run test`
+
+```bash
+# Examples
+src/lib/__tests__/utils.test.ts         # Utility function tests
+src/lib/__tests__/dateUtils.test.ts     # Date formatting tests
+src/components/__tests__/Toast.test.tsx # Component tests
+```
+
+#### 2. Integration Tests (`src/app/api/**/__tests__/`)
+- **Location**: Next to API routes
+- **Framework**: Jest with mocking
+- **Coverage**: API endpoints, database integration, email services
+- **Run**: `npm test -- src/app/api`
+
+```bash
+# Examples
+src/app/api/__tests__/purchase-email.test.ts           # Purchase flow API
+src/app/api/admin/__tests__/complete-hold-sale.test.ts # Admin API
+src/app/api/admin/__tests__/update-hold.test.ts       # Hold management API
+```
+
+#### 3. End-to-End Tests (`tests/e2e/`)
+- **Location**: Dedicated e2e directory
+- **Framework**: Playwright
+- **Coverage**: Full user workflows, accessibility, mobile responsiveness
+- **Run**: `npm run test:e2e`
+
+```bash
+# Examples
+tests/e2e/purchase-flow.spec.ts      # Complete purchase workflow
+tests/e2e/admin-dashboard.spec.ts    # Admin management workflows
+tests/e2e/accessibility.spec.ts      # WCAG compliance testing
+tests/e2e/mobile-responsive.spec.ts  # Mobile/tablet responsiveness
+```
+
+### Testing Best Practices
+
+1. **Test-Driven Development**
+   ```bash
+   # Write test first
+   npm run test:watch    # Keep tests running
+   # Implement feature
+   # Ensure tests pass
+   ```
+
+2. **Pre-Commit Testing**
+   ```bash
+   npm run type-check    # TypeScript validation
+   npm run test          # Unit & integration tests
+   npm run build         # Production build test
+   ```
+
+3. **CI/CD Testing Pipeline**
+   ```bash
+   npm run lint          # Code style
+   npm run type-check    # Type safety
+   npm run test          # All Jest tests
+   npm run test:e2e      # Playwright tests
+   npm run build         # Production build
+   ```
+
+## ♿ Accessibility Development Guidelines
+
+### WCAG 2.1 AA Compliance
+
+This application follows WCAG 2.1 AA standards. All new features must maintain accessibility compliance.
+
+#### Key Requirements
+
+1. **Semantic HTML Structure**
+   ```tsx
+   // Good
+   <main id="main-content">
+     <h1>Page Title</h1>
+     <section aria-labelledby="products-heading">
+       <h2 id="products-heading">Products</h2>
+     </section>
+   </main>
+   
+   // Bad
+   <div>
+     <div class="title">Page Title</div>
+     <div class="section">
+       <div class="heading">Products</div>
+     </div>
+   </div>
+   ```
+
+2. **ARIA Labels and Roles**
+   ```tsx
+   // Forms
+   <input 
+     name="email" 
+     aria-label="Email address" 
+     required 
+     aria-describedby="email-error"
+   />
+   <div id="email-error" role="alert">Please enter a valid email</div>
+   
+   // Interactive elements
+   <button aria-label="Close dialog" onClick={handleClose}>×</button>
+   
+   // Dynamic content
+   <div aria-live="polite" id="status-message">
+     {successMessage}
+   </div>
+   ```
+
+3. **Keyboard Navigation**
+   ```tsx
+   const handleKeyDown = (e: React.KeyboardEvent) => {
+     if (e.key === 'Enter' || e.key === ' ') {
+       e.preventDefault();
+       handleClick();
+     }
+   };
+   
+   <div 
+     role="button" 
+     tabIndex={0} 
+     onKeyDown={handleKeyDown}
+     onClick={handleClick}
+   >
+     Custom Button
+   </div>
+   ```
+
+4. **Focus Management**
+   ```tsx
+   // Modal/dialog focus management
+   const dialogRef = useRef<HTMLDivElement>(null);
+   
+   useEffect(() => {
+     if (isOpen) {
+       dialogRef.current?.focus();
+     }
+   }, [isOpen]);
+   
+   <dialog ref={dialogRef} tabIndex={-1}>
+     <h2>Dialog Title</h2>
+     {/* Content */}
+   </dialog>
+   ```
+
+#### Accessibility Testing
+
+```bash
+# Run accessibility tests
+npx playwright test tests/e2e/accessibility.spec.ts
+
+# Test specific accessibility features
+npx playwright test tests/e2e/accessibility.spec.ts --grep "keyboard navigation"
+npx playwright test tests/e2e/accessibility.spec.ts --grep "screen reader"
+```
+
+## 📱 Mobile-First Development
+
+### Responsive Design Principles
+
+1. **Mobile-First CSS**
+   ```css
+   /* Base styles for mobile */
+   .product-card {
+     width: 100%;
+     padding: 1rem;
+   }
+   
+   /* Tablet and up */
+   @media (min-width: 768px) {
+     .product-card {
+       width: 50%;
+     }
+   }
+   
+   /* Desktop and up */
+   @media (min-width: 1024px) {
+     .product-card {
+       width: 33.333%;
+     }
+   }
+   ```
+
+2. **Touch-Friendly Interfaces**
+   ```tsx
+   // Minimum 44px touch targets
+   const ButtonStyles = {
+     minHeight: '44px',
+     minWidth: '44px',
+     padding: '12px 16px'
+   };
+   
+   // Touch gesture support
+   const handleTouchStart = (e: React.TouchEvent) => {
+     setTouchStart(e.touches[0].clientX);
+   };
+   
+   const handleTouchEnd = (e: React.TouchEvent) => {
+     const touchEnd = e.changedTouches[0].clientX;
+     const diff = touchStart - touchEnd;
+     
+     if (Math.abs(diff) > 50) {
+       diff > 0 ? nextImage() : prevImage();
+     }
+   };
+   ```
+
+3. **Responsive Images**
+   ```tsx
+   // ImageKit responsive images
+   <img 
+     src={`${imageUrl}?tr=w-300,h-300,c-fit`} // Mobile
+     srcSet={`
+       ${imageUrl}?tr=w-300,h-300,c-fit 300w,
+       ${imageUrl}?tr=w-600,h-600,c-fit 600w,
+       ${imageUrl}?tr=w-900,h-900,c-fit 900w
+     `}
+     sizes="(max-width: 768px) 300px, (max-width: 1024px) 600px, 900px"
+     alt={product.name}
+   />
+   ```
+
+#### Mobile Testing
+
+```bash
+# Run mobile responsiveness tests
+npx playwright test tests/e2e/mobile-responsive.spec.ts
+
+# Test specific device sizes
+npx playwright test --project="Mobile Chrome"
+npx playwright test --project="Mobile Safari"
 ```
 
 ## 📱 Development Workflow
@@ -232,8 +505,104 @@ npm run lint:fix     # Fix linting issues
 ### 1. Feature Development Process
 
 1. **Create Feature Branch**
-```bash
-git checkout -b feature/product-catalog
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Development with Testing**
+   ```bash
+   npm run dev                    # Start development server
+   npm run test:watch            # Keep tests running
+   # Develop feature with TDD approach
+   npm run type-check            # Validate TypeScript
+   ```
+
+3. **Quality Assurance**
+   ```bash
+   npm run lint                  # Code style validation
+   npm run format               # Auto-format code
+   npm run test                 # Run all unit tests
+   npm run test:e2e             # Run e2e tests
+   npm run build               # Test production build
+   ```
+
+4. **Accessibility & Mobile Testing**
+   ```bash
+   # Test accessibility compliance
+   npx playwright test tests/e2e/accessibility.spec.ts
+   
+   # Test mobile responsiveness
+   npx playwright test tests/e2e/mobile-responsive.spec.ts
+   
+   # Test across browsers
+   npx playwright test --project=chromium
+   npx playwright test --project=firefox
+   npx playwright test --project=webkit
+   ```
+
+### 2. Code Review Checklist
+
+Before submitting a PR, ensure:
+
+- [ ] All tests pass (`npm run test` and `npm run test:e2e`)
+- [ ] TypeScript compiles without errors (`npm run type-check`)
+- [ ] Code follows style guidelines (`npm run lint`)
+- [ ] Accessibility requirements met (ARIA labels, keyboard navigation)
+- [ ] Mobile responsiveness tested
+- [ ] Loading states implemented for async operations
+- [ ] Error handling with user-friendly messages
+- [ ] Toast notifications for user feedback
+
+### 3. Component Development Standards
+
+#### Loading States
+```tsx
+const [isLoading, setIsLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+
+// Always show loading state for async operations
+if (isLoading) {
+  return <LoadingSpinner size="medium" />;
+}
+
+// Always handle error states
+if (error) {
+  return (
+    <div role="alert" className="error-message">
+      {error}
+    </div>
+  );
+}
+```
+
+#### Form Validation
+```tsx
+// Client-side validation with accessibility
+const [errors, setErrors] = useState<Record<string, string>>({});
+
+<input
+  name="email"
+  aria-label="Email address"
+  aria-invalid={!!errors.email}
+  aria-describedby={errors.email ? "email-error" : undefined}
+  required
+/>
+{errors.email && (
+  <div id="email-error" role="alert" className="error-text">
+    {errors.email}
+  </div>
+)}
+```
+
+#### Success Feedback
+```tsx
+// Use toast notifications for success states
+const { showToast } = useToast();
+
+const handleSuccess = () => {
+  showToast('Purchase request submitted successfully!', 'success');
+  setFormVisible(false);
+};
 ```
 
 ## **Key Benefits of Option 2**
