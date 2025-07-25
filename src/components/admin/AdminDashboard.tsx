@@ -1,5 +1,6 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ProductTable from '@/components/admin/ProductTable';
 import HoldManagement from '@/components/admin/HoldManagement';
 import HoldNotifications from '@/components/admin/HoldNotifications';
@@ -25,6 +26,26 @@ export default function AdminDashboard({
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   const { showSuccess, showError } = useToast();
+  const router = useRouter();
+
+  // Logout function
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        showSuccess('Logged Out', 'You have been successfully logged out');
+        router.push('/admin/login');
+      } else {
+        showError('Logout Failed', 'There was an error logging out');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      showError('Logout Failed', 'Network error during logout');
+    }
+  };
 
   const activeHolds = holds.filter(h => {
     const fields = h.fields;
@@ -90,9 +111,18 @@ export default function AdminDashboard({
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">Admin Dashboard</h1>
-        <p className="text-gray-400">Manage your MMA gear inventory and orders</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-4xl font-bold mb-4">Admin Dashboard</h1>
+          <p className="text-gray-400">Manage your MMA gear inventory and orders</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="btn-secondary px-4 py-2 text-sm flex items-center gap-2 hover:bg-red-600 hover:border-red-500 transition-colors"
+        >
+          <span>🚪</span>
+          <span>Logout</span>
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -198,11 +228,6 @@ export default function AdminDashboard({
         </div>
       </div>
 
-      <div className="mt-8 p-4 bg-yellow-900 border border-yellow-700 rounded-lg">
-        <p className="text-yellow-200">
-          <strong>Note:</strong> Authentication will be required to access this page in production.
-        </p>
-      </div>
 
       {/* Hold Notifications */}
       <HoldNotifications holds={activeHolds} productMap={productMap} />

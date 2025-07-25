@@ -1,8 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AutocompleteDropdown from '@/components/AutocompleteDropdown';
 
 export default function CreateProductPage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -19,6 +22,39 @@ export default function CreateProductPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check authentication on mount
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/auth/check');
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+        } else {
+          router.push('/admin/login');
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        router.push('/admin/login');
+      }
+    }
+    
+    checkAuth();
+  }, [router]);
+
+  // Show loading while checking auth
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });

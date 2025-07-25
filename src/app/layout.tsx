@@ -44,14 +44,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         Contact
                       </Link>
                     </li>
-                    <li>
-                      <Link 
-                        href="/admin" 
-                        className="text-gray-300 hover:text-red-400 focus:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 rounded-sm px-2 py-1 transition-colors"
-                      >
-                        Admin
-                      </Link>
-                    </li>
                   </ul>
                 </nav>
               </div>

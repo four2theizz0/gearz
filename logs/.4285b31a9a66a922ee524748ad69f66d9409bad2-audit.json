@@ -9,6 +9,11 @@
             "date": 1753137289661,
             "name": "/Users/jpg.st/gearz/logs/mcp-puppeteer-2025-07-21.log",
             "hash": "a75462acd95bacdc7c67babe09b207aa7e90ada0c876ae7f94f1a1558189d548"
+        },
+        {
+            "date": 1753416552746,
+            "name": "/Users/jpg.st/gearz/logs/mcp-puppeteer-2025-07-25.log",
+            "hash": "3ffc58ffcd7ed5d1852c26532dab3615fbde803a08b7484a250e7cdf6305cafe"
         }
     ],
     "hashType": "sha256"
